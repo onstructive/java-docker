@@ -2,7 +2,12 @@ Task dockerTag = task "dockerTag" {
     group "docker"
 }
 
-Delete clean = task "clean"(type: Delete) {
+Task dockerPush = task "dockerPush" {
+    group "docker"
+    dependsOn dockerTag
+}
+
+tasks.register("clean", Delete) {
     group "docker"
     delete file("$buildDir/docker")
 }
@@ -12,8 +17,17 @@ tasks.register ("hello", Exec) {
     args = ["1"]
 }
 
+List<String> openJdkTags = [
+        "11.0.10-jre-slim-buster",
+        "11.0.2-jdk",
+        "13.0.2-slim-buster",
+        "14.0.2-slim-buster",
+        "15.0.2-slim-buster"
+]
 
-["11.0.10-jre-slim-buster", "13.0.2-slim-buster"].each { tag ->
+String timestamp = new Date().format('yyyyMMdd-HHmm')
+
+openJdkTags.each { String tag ->
 
     File dockerBuildDir = file("$buildDir/docker/$tag")
     dockerBuildDir.mkdirs()
@@ -29,19 +43,33 @@ tasks.register ("hello", Exec) {
         dockerfile.text = dockerfileContent
     }
 
-    TaskProvider<Exec> e = tasks.register("dockerTagJava-$tag", Exec) {
+    TaskProvider<Exec> dockerTagJava = tasks.register("dockerTagJava-$tag", Exec) {
         group 'docker'
         dependsOn dockerFileGen
 
         workingDir dockerBuildDir
 
         executable "docker"
-        args = ["build", "--no-cache","-t", "onstructive/java:$tag", "."]
+        args = ["build", "--no-cache","-t", "onstructive/java:${tag}-${timestamp}", "."]
 
         logging.captureStandardOutput LogLevel.INFO
         logging.captureStandardError LogLevel.ERROR
     }
 
-    dockerTag.dependsOn << e
+    TaskProvider<Exec> dockerPushJava = tasks.register("dockerPushJava-$tag", Exec) {
+        group 'docker'
+        dependsOn dockerTagJava
+
+        workingDir dockerBuildDir
+
+        executable "docker"
+        args = ["push", "onstructive/java:${tag}-${timestamp}"]
+
+        logging.captureStandardOutput LogLevel.INFO
+        logging.captureStandardError LogLevel.ERROR
+    }
+
+    dockerTag.dependsOn << dockerTagJava
+    dockerPush.dependsOn << dockerTag
 }
 

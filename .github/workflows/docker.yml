@@ -1,0 +1,67 @@
+name: Build Java Docker Images
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+
+jobs:
+  build-test:
+
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        java: [ '15' ]
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v2
+
+      - name: Cache Gradle Caches
+        uses: actions/cache@v2
+        with:
+          path: ~/.gradle/caches
+          key: ${{ runner.os }}-gradle-caches-${{ hashFiles('**/*.gradle') }}-${{ hashFiles('gradle.properties') }}
+          restore-keys: ${{ runner.os }}-gradle-caches
+
+      - name: Cache Gradle Wrapper
+        uses: actions/cache@v2
+        with:
+          path: ~/.gradle/wrapper
+          key: ${{ runner.os }}-gradle-wrapper-${{ hashFiles('gradle/wrapper/gradle-wrapper.properties') }}
+          restore-keys: ${{ runner.os }}-gradle-wrapper
+
+      - name: Set up JDK
+        uses: actions/setup-java@v1
+        with:
+          java-version: ${{ matrix.java }}
+
+      - name: Build the OpenJDK Docker images
+        run: ./gradlew -s dockerTag
+
+      - name: Publish Docker images
+        if: github.ref == 'refs/heads/main'
+        run: |
+          docker login  -u ${{ secrets.DOCKER_HUB_USER }} -p ${{ secrets.DOCKER_HUB_PWD }}
+          ./gradlew -s dockerPush
+          docker logout
+
+      - name: Dump docker logs on failure
+        if: failure()
+        uses: jwalton/gh-docker-logs@v1
+        with:
+          dest: ${{ github.workspace }}/dockerlogs
+
+      - name: Tar logs
+        if: failure()
+        run: tar cvzf ${{ github.workspace }}/dockerlogs.tgz ${{ github.workspace }}/dockerlogs
+
+      - name: Upload Docker Logs
+        if: failure()
+        uses: actions/upload-artifact@v2
+        with:
+          name: Docker Logs
+          path: ${{ github.workspace }}/dockerlogs.tgz
+          if-no-files-found: error

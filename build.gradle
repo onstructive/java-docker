@@ -4,7 +4,6 @@ Task dockerTag = task "dockerTag" {
 
 Task dockerPush = task "dockerPush" {
     group "docker"
-    dependsOn dockerTag
 }
 
 tasks.register("clean", Delete) {
@@ -12,7 +11,7 @@ tasks.register("clean", Delete) {
     delete file("$buildDir/docker")
 }
 
-tasks.register ("hello", Exec) {
+tasks.register("hello", Exec) {
     executable "echo"
     args = ["1"]
 }
@@ -32,11 +31,10 @@ openJdkTags.each { String tag ->
     File dockerBuildDir = file("$buildDir/docker/$tag")
     dockerBuildDir.mkdirs()
 
-    TaskProvider<Task> dockerFileGen = tasks.register("dockerfileJava-$tag"){
+    TaskProvider<Task> dockerFileGen = tasks.register("dockerfileJava-$tag") {
         group 'docker'
 
         String dockerfileContent = file("$projectDir/src/main/docker/template/Dockerfile").text.replace('${IMAGE_TAG}', tag)
-
 
         File dockerfile = new File(dockerBuildDir, 'Dockerfile')
         dockerfile.createNewFile()
@@ -50,7 +48,7 @@ openJdkTags.each { String tag ->
         workingDir dockerBuildDir
 
         executable "docker"
-        args = ["build", "--no-cache","-t", "onstructive/java:${tag}-${timestamp}", "."]
+        args = ["build", "-t", "onstructive/java:${tag}-${timestamp}", "-t", "onstructive/java:${tag}-latest", "."]
 
         logging.captureStandardOutput LogLevel.INFO
         logging.captureStandardError LogLevel.ERROR
@@ -70,6 +68,6 @@ openJdkTags.each { String tag ->
     }
 
     dockerTag.dependsOn << dockerTagJava
-    dockerPush.dependsOn << dockerTag
+    dockerPush.dependsOn << dockerPushJava
 }
 

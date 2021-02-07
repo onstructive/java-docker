@@ -41,6 +41,9 @@ jobs:
       - name: Build the OpenJDK Docker images
         run: ./gradlew -s dockerTag
 
+      - name: Print the created images
+        run: docker image ls
+
       - name: Publish Docker images
         if: github.ref == 'refs/heads/main'
         run: |

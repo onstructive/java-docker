@@ -1,0 +1,25 @@
+pluginManagement {
+    repositories {
+        maven {
+            credentials {
+                // access properties available to settings.gradle
+                Map<String, Object> props = settings.getExtensions().getExtraProperties().getProperties()
+                username props['artifactory_user'] ?: System.getenv('GESUS_ARTIFACTORY_USER')
+                password props['artifactory_password'] ?: System.getenv('GESUS_ARTIFACTORY_PASS')
+            }
+            url "https://repo.onstructive.ch/artifactory/libs-release/"
+        }
+        gradlePluginPortal()
+    }
+}
+
+plugins {
+    id "com.gradle.enterprise" version "3.2.1"
+}
+
+gradleEnterprise {
+    buildScan {
+        termsOfServiceUrl = 'https://gradle.com/terms-of-service'
+        termsOfServiceAgree = 'yes'
+    }
+}

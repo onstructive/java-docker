@@ -13,7 +13,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        java: [ '15' ]
+        jdk: [ "11.0.10-jre-slim-buster", "11.0.2-jdk", "13.0.2-slim-buster", "14.0.2-slim-buster", "15.0.2-slim-buster" ]
 
     steps:
       - name: Check out repository
@@ -36,10 +36,10 @@ jobs:
       - name: Set up JDK
         uses: actions/setup-java@v1
         with:
-          java-version: ${{ matrix.java }}
+          java-version: 15
 
       - name: Build the OpenJDK Docker images
-        run: ./gradlew -s dockerTag
+        run: ./gradlew -s dockerTag-${{ matrix.jdk }}
 
       - name: Print the created images
         run: docker image ls
@@ -48,7 +48,7 @@ jobs:
         if: github.ref == 'refs/heads/main'
         run: |
           echo ${{ secrets.DOCKER_HUB_PWD }} | docker login -u ${{ secrets.DOCKER_HUB_USER }} --password-stdin
-          ./gradlew -s dockerPush
+          ./gradlew -s dockerPush-${{ matrix.jdk }}
           docker logout
 
       - name: Dump docker logs on failure

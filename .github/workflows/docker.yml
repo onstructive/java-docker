@@ -13,7 +13,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        jdk: [ "11.0.10-jre-slim-buster", "11.0.2-jdk", "13.0.2-slim-buster", "14.0.2-slim-buster", "15.0.2-slim-buster" ]
+        jdk: [ "11", "12", "13", "14", "15" ]
 
     steps:
       - name: Check out repository

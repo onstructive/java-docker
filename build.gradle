@@ -13,6 +13,7 @@ tasks.register("clean", Delete) {
 
 List<String> tags = [
         "11.0.10_9-jre-hotspot",
+        "12.0.2_10-jre-hotspot",
         "13.0.2_8-jre-hotspot",
         "14.0.2_12-jre-hotspot",
         "15.0.2_7-jre-hotspot"
@@ -25,7 +26,9 @@ tags.each { String tag ->
     File dockerBuildDir = file("$buildDir/docker/$tag")
     dockerBuildDir.mkdirs()
 
-    TaskProvider<Task> dockerFileGen = tasks.register("dockerfileJava-$tag") {
+    String javaMajor = tag.split("\\.").first()
+
+    TaskProvider<Task> dockerFileGen = tasks.register("dockerfileJava-$javaMajor") {
         group 'docker'
 
         String dockerfileContent = file("$projectDir/src/main/docker/template/Dockerfile").text.replace('${IMAGE_TAG}', tag)
@@ -35,7 +38,7 @@ tags.each { String tag ->
         dockerfile.text = dockerfileContent
     }
 
-    TaskProvider<Exec> dockerTagJava = tasks.register("dockerTagJava-$tag", Exec) {
+    TaskProvider<Exec> dockerTagJava = tasks.register("dockerTagJava-$javaMajor", Exec) {
         group 'docker'
         dependsOn dockerFileGen
 
@@ -48,7 +51,7 @@ tags.each { String tag ->
         logging.captureStandardError LogLevel.ERROR
     }
 
-    TaskProvider<Exec> dockerPushJava = tasks.register("dockerPushJava-$tag", Exec) {
+    TaskProvider<Exec> dockerPushJava = tasks.register("dockerPushJava-$javaMajor", Exec) {
         group 'docker'
         dependsOn dockerTagJava
 

@@ -1,4 +1,4 @@
-# Java Docker by onstructive GmbH
+# Java Docker by onstructive
 
 This repository provides you custom Java Docker images based on OpenJDK. All images extend the OpenJDK image by
 

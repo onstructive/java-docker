@@ -11,22 +11,16 @@ tasks.register("clean", Delete) {
     delete file("$buildDir/docker")
 }
 
-tasks.register("hello", Exec) {
-    executable "echo"
-    args = ["1"]
-}
-
-List<String> openJdkTags = [
-        "11.0.10-jre-slim-buster",
-        "11.0.2-jdk",
-        "13.0.2-slim-buster",
-        "14.0.2-slim-buster",
-        "15.0.2-slim-buster"
+List<String> tags = [
+        "11.0.10_9-jre-hotspot",
+        "13.0.2_8-jre-hotspot",
+        "14.0.2_12-jre-hotspot",
+        "15.0.2_7-jre-hotspot"
 ]
 
 String timestamp = new Date().format('yyyyMMdd-HHmm')
 
-openJdkTags.each { String tag ->
+tags.each { String tag ->
 
     File dockerBuildDir = file("$buildDir/docker/$tag")
     dockerBuildDir.mkdirs()

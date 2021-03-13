@@ -1,4 +1,4 @@
-FROM openjdk:${IMAGE_TAG}
+FROM adoptopenjdk:${IMAGE_TAG}
 MAINTAINER silvio.wangler@onstructive.ch
 
 ENV TZ=Europe/Zurich

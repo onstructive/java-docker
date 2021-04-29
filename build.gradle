@@ -11,54 +11,67 @@ tasks.register("clean", Delete) {
     delete file("$buildDir/docker")
 }
 
-List<String> tags = [
-        "11.0.10_9-jre-hotspot",
-        "12.0.2_10-jre-hotspot",
-        "13.0.2_8-jre-hotspot",
-        "14.0.2_12-jre-hotspot",
-        "15.0.2_7-jre-hotspot"
+class DockerImage {
+    String repo
+    String tag
+    String javaVersion
+
+    DockerImage(String repo, String tag, String javaVersion) {
+        this.repo = repo
+        this.tag = tag
+        this.javaVersion = javaVersion
+    }
+}
+
+List<DockerImage> tags = [
+        new DockerImage("adoptopenjdk:","11.0.10_9-jre-hotspot", "11"),
+        new DockerImage("adoptopenjdk:","12.0.2_10-jre-hotspot", "12"),
+        new DockerImage("adoptopenjdk:","13.0.2_8-jre-hotspot", "13"),
+        new DockerImage("adoptopenjdk:","14.0.2_12-jre-hotspot", "14"),
+        new DockerImage("adoptopenjdk/openjdk15:","jre-15.0.2_7", "15"),
+        new DockerImage("adoptopenjdk/openjdk16:","jre-16_36", "16")
 ]
 
 String timestamp = new Date().format('yyyyMMdd-HHmm')
 
-tags.each { String tag ->
+tags.each { DockerImage dockerImage ->
 
-    File dockerBuildDir = file("$buildDir/docker/$tag")
+    File dockerBuildDir = file("$buildDir/docker/${dockerImage.tag}")
     dockerBuildDir.mkdirs()
 
-    String javaMajor = tag.split("\\.").first()
 
-    TaskProvider<Task> dockerFileGen = tasks.register("dockerfileJava-$javaMajor") {
+    TaskProvider<Task> dockerFileGen = tasks.register("dockerfileJava-${dockerImage.javaVersion}") {
         group 'docker'
 
-        String dockerfileContent = file("$projectDir/src/main/docker/template/Dockerfile").text.replace('${IMAGE_TAG}', tag)
+        String dockerfileContent = file("$projectDir/src/main/docker/template/Dockerfile")
+                .text.replace('${REPO}', dockerImage.repo).replace('${IMAGE_TAG}', dockerImage.tag)
 
         File dockerfile = new File(dockerBuildDir, 'Dockerfile')
         dockerfile.createNewFile()
         dockerfile.text = dockerfileContent
     }
 
-    TaskProvider<Exec> dockerTagJava = tasks.register("dockerTagJava-$javaMajor", Exec) {
+    TaskProvider<Exec> dockerTagJava = tasks.register("dockerTagJava-${dockerImage.javaVersion}", Exec) {
         group 'docker'
         dependsOn dockerFileGen
 
         workingDir dockerBuildDir
 
         executable "docker"
-        args = ["build", "-t", "onstructive/java:${tag}-${timestamp}", "-t", "onstructive/java:${tag}-latest", "."]
+        args = ["build", "-t", "onstructive/java:${dockerImage.tag}-${timestamp}", "-t", "onstructive/java:${dockerImage.tag}-latest", "."]
 
         logging.captureStandardOutput LogLevel.INFO
         logging.captureStandardError LogLevel.ERROR
     }
 
-    TaskProvider<Exec> dockerPushJava = tasks.register("dockerPushJava-$javaMajor", Exec) {
+    TaskProvider<Exec> dockerPushJava = tasks.register("dockerPushJava-${dockerImage.javaVersion}", Exec) {
         group 'docker'
         dependsOn dockerTagJava
 
         workingDir dockerBuildDir
 
         executable "docker"
-        args = ["push", "onstructive/java:${tag}-${timestamp}"]
+        args = ["push", "onstructive/java:${dockerImage.tag}-${timestamp}"]
 
         logging.captureStandardOutput LogLevel.INFO
         logging.captureStandardError LogLevel.ERROR

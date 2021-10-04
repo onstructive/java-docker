@@ -30,7 +30,7 @@ List<DockerImage> tags = [
         new DockerImage("adoptopenjdk", "14.0.2_12-jre-hotspot", "14"),
         new DockerImage("adoptopenjdk/openjdk15", "jre-15.0.2_7", "15"),
         new DockerImage("adoptopenjdk/openjdk16", "jre-16_36", "16"),
-        new DockerImage("openjdk", "17-jdk-slim-bullseye", "17")
+        new DockerImage("eclipse-temurin", "17_35-jdk-focal", "17")
 ]
 
 String timestamp = new Date().format('yyyyMMdd-HHmm')
